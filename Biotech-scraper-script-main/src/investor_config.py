@@ -1,10 +1,23 @@
 TARGET_FIELDS = [
+    "company_name",
+    "contact_name",
+    "corporate_email",
+    "website",
+
     "main_sector",
     "therapeutic_areas",
+
     "investment_stage",
     "regions",
+
     "investment_thesis",
-    "ticket_size_min",
-    "ticket_size_max",
+
+    "min_ticket_size",
+    "max_ticket_size",
+
     "additional_notes",
+
+    "evidence_quote",
+
+    "confidence"
 ]
