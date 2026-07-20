@@ -1,0 +1,106 @@
+name: Biotech Prospection Scraper
+
+# Manual trigger only -- this runs 1-2x/month on demand, not on a schedule.
+# Before running: upload your companies Excel file into the input/ folder
+# of this repo (via GitHub's web UI: Add file > Upload files), then trigger
+# this workflow from the Actions tab and fill in the inputs below.
+on:
+  workflow_dispatch:
+    inputs:
+      input_file:
+        description: "Path to the input Excel file, relative to repo root (e.g. input/companies.xlsx)"
+        required: true
+      chunk_count:
+        description: "How many parallel jobs to split the company list across. Keep each chunk small enough to finish well under 6 hours -- for ~1000 companies, 4-6 chunks is a safe starting point."
+        required: true
+        default: "4"
+      company_col:
+        description: "Column name containing company names"
+        required: false
+        default: "company_name"
+      website_col:
+        description: "Column name containing website URLs"
+        required: false
+        default: "website_domain"
+
+jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      chunks: ${{ steps.set-matrix.outputs.chunks }}
+    steps:
+      - id: set-matrix
+        run: |
+          COUNT="${{ github.event.inputs.chunk_count }}"
+          CHUNKS=$(python3 -c "import json; print(json.dumps(list(range($COUNT))))")
+          echo "chunks=$CHUNKS" >> "$GITHUB_OUTPUT"
+
+  scrape:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chunk_index: ${{ fromJson(needs.build-matrix.outputs.chunks) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run scraper (chunk ${{ matrix.chunk_index }})
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python src/main.py \
+            --input "${{ github.event.inputs.input_file }}" \
+            --output-dir output \
+            --company-col "${{ github.event.inputs.company_col }}" \
+            --website-col "${{ github.event.inputs.website_col }}" \
+            --chunk-index ${{ matrix.chunk_index }} \
+            --chunk-count ${{ github.event.inputs.chunk_count }}
+
+      - name: Upload chunk results
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunk-${{ matrix.chunk_index }}-output
+          path: output/
+
+  merge:
+    needs: scrape
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pandas openpyxl
+
+      - name: Download all chunk outputs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: chunk-*-output
+          path: output
+          merge-multiple: true
+
+      - name: Merge chunks into final files
+        run: |
+          BASE_NAME=$(python3 -c "import os; print(os.path.splitext(os.path.basename('${{ github.event.inputs.input_file }}'))[0])")
+          python src/merge_chunks.py --input-dir output --base-name "$BASE_NAME"
+
+      - name: Upload merged results
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-results
+          path: |
+            output/*_results_merged.xlsx
+            output/*_audit_merged.xlsx
