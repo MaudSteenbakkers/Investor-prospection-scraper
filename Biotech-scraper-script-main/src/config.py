@@ -667,14 +667,16 @@ FOCUS_SECTION_LABELS = ['pipeline',
  'our medicines',
  'our treatments']
 
-FOCUS_URL_SEGMENTS = ['pipeline',
- 'portfolio',
- 'science',
- 'research',
- 'therapeutic',
- 'indication',
- 'platform',
- 'programs']
+FOCUS_URL_SEGMENTS = [
+    'investment',
+    'investments',
+    'portfolio',
+    'strategy',
+    'focus',
+    'thesis',
+    'fund',
+    'team',
+    'about']
 
 SKIP_SECTION_LABELS = ['our team',
  'management',
