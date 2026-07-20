@@ -1,1 +1,81 @@
+# Investor Prospection Scraper
 
+## Goal
+
+Convert existing biotech indication scraper into an investor prospecting scraper.
+
+Input:
+- Existing investor database Excel
+
+Output:
+- Investor-enriched Excel
+
+## Current status
+
+Repository created:
+- investor-prospection-scraper
+
+Files created:
+- src/investor_config.py
+- src/investor_prompt.py
+- src/investor_extract.py
+
+Files not modified yet:
+- main.py
+- merge_chunks.py
+- llm_classify.py
+- scrape.yml
+
+## Planned output fields
+
+Company / Organization
+Contact
+Corporate Email
+Website
+
+Main Sector
+Therapeutic Areas
+
+Investment Stage
+Regions
+
+Investment Thesis
+
+Min Ticket Size
+Max Ticket Size
+
+Additional Notes
+
+Evidence Quote
+
+Confidence
+
+Investment Fit
+Contact Priority
+
+## Current thinking
+
+Reuse:
+- crawler.py
+- main.py
+- GitHub Actions
+
+Replace:
+- indication keyword matching
+- biotech classifications
+
+New approach:
+- Website crawl
+- Claude extraction
+- Structured JSON output
+- Excel export
+
+## Next step
+
+Build investor_extract.py
+
+Need:
+- Claude prompt
+- JSON schema
+- Mapping to Excel columns
+`
